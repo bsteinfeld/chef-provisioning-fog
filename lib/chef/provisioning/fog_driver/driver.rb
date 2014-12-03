@@ -434,7 +434,7 @@ module FogDriver
       elsif option_for(machine_options, :floating_ip)
         Chef::Log.info 'Attaching given IP'
         action_handler.perform_action "attach floating IP #{option_for(machine_options, :floating_ip)}" do
-          attach_ip(server, option_for(machine_options, :allocation_id), option_for(machine_options, :floating_ip))
+          attach_ip(server, option_for(machine_options, :floating_ip))
         end
       end
     end
@@ -458,12 +458,11 @@ module FogDriver
 
     # Attach given IP to machine
     # Code taken from kitchen-openstack driver
-    #    https://github.com/test-kitchen/kitchen-openstack/blob/master/lib/kitchen/driver/openstack.rb#L209-L213
-    def attach_ip(server, allocation_id, ip)
+    #    https://github.com/test-kitchen/kitchen-openstack/blob/master/lib/kitchen/driver/openstack.rb#L254-L258
+    def attach_ip(server, ip)
       Chef::Log.info "Attaching floating IP <#{ip}>"
-      compute.associate_address(:instance_id => server.id,
-                                :allocation_id => allocation_id,
-                                :public_ip => ip)
+      server.associate_address ip
+      (server.addresses['public'] ||= []) << { 'version' => 4, 'addr' => ip }
     end
 
     def symbolize_keys(options)
