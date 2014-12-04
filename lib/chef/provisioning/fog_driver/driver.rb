@@ -77,6 +77,7 @@ module FogDriver
   # - start_timeout: the time to wait for the instance to start (defaults to 180)
   # - ssh_timeout: the time to wait for ssh to be available if the instance is detected as up (defaults to 20)
   # - ssh_username: username to use for ssh
+  # - ssh_password: password to use for ssh
   # - sudo: true to prefix all commands with "sudo"
   # - use_private_ip_for_ssh: hint to use private ip when available
   # - convergence_options: hash of options for the convergence strategy
@@ -600,12 +601,18 @@ module FogDriver
     end
 
     def ssh_options_for(machine_spec, machine_options, server)
-      result = {
-        :auth_methods => [ 'publickey' ],
-        :keys_only => true,
-        :host_key_alias => "#{server.id}.#{provider}"
-      }.merge(machine_options[:ssh_options] || {})
-      result[:key_data] = [ private_key_for(machine_spec, server) ]
+      if machine_options.has_key?(:ssh_password)
+        result = {
+          :password => machine_options[:ssh_password]
+        }.merge(machine_options[:ssh_options] || {})
+      else
+        result = {
+          :auth_methods => [ 'publickey' ],
+          :keys_only => true,
+          :host_key_alias => "#{server.id}.#{provider}"
+        }.merge(machine_options[:ssh_options] || {})
+        result[:key_data] = [ private_key_for(machine_spec, server) ]
+      end
       result
     end
 
