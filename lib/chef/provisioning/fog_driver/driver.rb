@@ -461,6 +461,7 @@ module FogDriver
     #    https://github.com/test-kitchen/kitchen-openstack/blob/master/lib/kitchen/driver/openstack.rb#L254-L258
     def attach_ip(server, ip)
       Chef::Log.info "Attaching floating IP <#{ip}>"
+      sleep(1)
       server.associate_address ip
       (server.addresses['public'] ||= []) << { 'version' => 4, 'addr' => ip }
     end
