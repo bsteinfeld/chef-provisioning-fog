@@ -19,7 +19,7 @@ module FogDriver
         bootstrap_options[:name] ||= machine_spec.name
         
         if !bootstrap_options[:flavor_ref] && bootstrap_options[:flavor_name]
-          bootstrap_options[:flavor_ref] = compute.flavors.flavors.detect { |f| f.name == bootstrap_options[:flavor_name] }.id
+          bootstrap_options[:flavor_ref] = compute.flavors.detect { |f| f.name == bootstrap_options[:flavor_name] }.id
         end
         
         if !bootstrap_options[:image_ref] && bootstrap_options[:image_name]
