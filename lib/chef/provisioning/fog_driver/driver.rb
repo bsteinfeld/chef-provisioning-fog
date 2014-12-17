@@ -200,12 +200,13 @@ module FogDriver
         raise "Machine #{machine_spec.name} does not have a server associated with it, or server does not exist."
       end
 
-      # Attach floating IPs if necessary
-      attach_floating_ips(action_handler, machine_spec, machine_options, server)
-
       # Start the server if needed, and wait for it to start
       start_server(action_handler, machine_spec, server)
       wait_until_ready(action_handler, machine_spec, machine_options, server)
+      
+      # Attach floating IPs if necessary
+      attach_floating_ips(action_handler, machine_spec, machine_options, server)s
+      
       begin
         wait_for_transport(action_handler, machine_spec, machine_options, server)
       rescue Fog::Errors::TimeoutError
@@ -446,14 +447,20 @@ module FogDriver
     def attach_ip_from_pool(server, pool)
       @ip_pool_lock ||= Mutex.new
       @ip_pool_lock.synchronize do
-        Chef::Log.info "Attaching floating IP from <#{pool}> pool"
-        free_addrs = compute.addresses.collect do |i|
-          i.ip if i.fixed_ip.nil? and i.instance_id.nil? and i.pool == pool
-        end.compact
-        if free_addrs.empty?
-          raise ActionFailed, "No available IPs in pool <#{pool}>"
+        used_pools = compute.addresses.select { |a| server.floating_ip_addresses.include?(a.ip) }.collect { |ip| ip.pool }
+        
+        if used_pools.include?(pool)
+          Chef::Log.info "Server already has floating IP from <#{pool}> pool"
+        else
+          Chef::Log.info "Attaching floating IP from <#{pool}> pool"
+          free_addrs = compute.addresses.collect do |i|
+            i.ip if i.fixed_ip.nil? and i.instance_id.nil? and i.pool == pool
+          end.compact
+          if free_addrs.empty?
+            raise ActionFailed, "No available IPs in pool <#{pool}>"
+          end
+          attach_ip(server, free_addrs[0])
         end
-        attach_ip(server, free_addrs[0])
       end
     end
 
@@ -462,7 +469,7 @@ module FogDriver
     #    https://github.com/test-kitchen/kitchen-openstack/blob/master/lib/kitchen/driver/openstack.rb#L254-L258
     def attach_ip(server, ip)
       Chef::Log.info "Attaching floating IP <#{ip}>"
-      sleep(1)
+
       server.associate_address ip
       (server.addresses['public'] ||= []) << { 'version' => 4, 'addr' => ip }
     end
