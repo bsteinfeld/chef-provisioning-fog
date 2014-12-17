@@ -205,7 +205,7 @@ module FogDriver
       wait_until_ready(action_handler, machine_spec, machine_options, server)
       
       # Attach floating IPs if necessary
-      attach_floating_ips(action_handler, machine_spec, machine_options, server)s
+      attach_floating_ips(action_handler, machine_spec, machine_options, server)
       
       begin
         wait_for_transport(action_handler, machine_spec, machine_options, server)
